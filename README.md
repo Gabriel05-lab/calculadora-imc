@@ -1,114 +1,155 @@
-calculadora-imc/
-│
-├── pom.xml
-├── README.md
-│
-└── src/
-    └── main/
-        └── java/CalculadoraIMC.javadouble calcularIMC(double peso, double altura);
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
-String classificarIMC(double imc);
+// ==========================================
+// 1. EXCEÇÃO CUSTOMIZADA (Tratamento de Erros Avançado)
+// ==========================================
+class DadosInvalidosException extends Exception {
+    public DadosInvalidosException(String mensagem) {
+        super(mensagem);
+    }
+}
 
-}PessoaBase.java
-protected String nome;
-protected int idade;
-public abstract String exibirPerfil();
-getNome()
-getIdade()
-Pessoa.java
-extends PessoaBase
-implements CalculadoraIMC
-private double peso;
-private double altura;
-private boolean ativo;
-nome
-idade
-peso
-altura
-super(nome, idade);
-getPeso()
-getAltura()
-isAtivo()
-setPeso()
-peso > 0
-peso / (altura²)
-if
-else if
-else
-<18.5
-18.5–24.9
-25–29.9
-30–34.9
-35–39.9
->=40
-Pessoa: João | Idade: 25
-Atleta.java
-extends Pessoa
-private String modalidade;
-nome
-idade
-peso
-altura
-modalidade
-super(...)
-@Override
-public String classificarIMC(...)
-<20
-20–27
->27
-super.exibirPerfil()
-CalculadoraRecursiva.java
-potencia(double base, int exp)
-exp == 0
-1
-base * potencia(base, exp - 1)
-arredondar()
-mostrarSeparador()
-EntradaInvalidaException.java
-RuntimeException
-public EntradaInvalidaException(String mensagem)
-super(mensagem);
-Historico.java
-ArrayList<String>
-adicionar()
-exibir()
-Nenhum cálculo registrado.
-for(String r : registros)
-SistemaIMC.java
-private Historico historico =
-        new Historico();
-        processar(Pessoa pessoa)
-        exibirHistorico()
-        historico.exibir();
-        Main.java
-        Scanner scanner
-        SistemaIMC sistema =
-        new SistemaIMC();
-        Pessoa pessoaAtual = null;
-        Pessoa
-        Atleta
-        lerInt()
-lerDouble()
-lerString()
-try/catch
-EntradaInvalidaException
-while(opcao != 0)
-1 - Cadastrar Pessoa
-2 - Cadastrar Atleta
-3 - Calcular IMC
-4 - Histórico
-0 - Sair
-switch(opcao)
-new Pessoa(...)
-new Atleta(...)
-if(pessoaAtual != null)
-sistema.processar(pessoaAtual);
-EntradaInvalidaException
-calcularIMC()
-altura * altura
-CalculadoraRecursiva.potencia(altura, 2)
-<groupId>br.edu.seunome</groupId>
-<artifactId>calculadora-imc</artifactId>
-<version>1.0.0</version>
-17
-JUnit Jupiter# calculadora-imc
+// ==========================================
+// 2. CLASSE ABSTRATA (Abstração Pura)
+// ==========================================
+abstract class Pessoa {
+    private String nome;
+    private double peso;
+    private double altura;
+
+    public Pessoa(String nome, double peso, double altura) throws DadosInvalidosException {
+        if (peso <= 0 || altura <= 0) {
+            throw new DadosInvalidosException("Peso e altura devem ser maiores que zero.");
+        }
+        this.nome = nome;
+        this.peso = peso;
+        this.altura = altura;
+    }
+
+    // Método abstrato: obriga as subclasses a implementarem sua própria lógica
+    public abstract double calcularImc();
+
+    // Getters e Setters (Encapsulamento)
+    public String getNome() { return nome; }
+    public double getPeso() { return peso; }
+    public double getAltura() { return altura; }
+}
+
+// ==========================================
+// 3. HERANÇA E POLIMORFISMO (Classes Filhas)
+// ==========================================
+class PacienteComum extends Pessoa {
+    public PacienteComum(String nome, double peso, double altura) throws DadosInvalidosException {
+        super(nome, peso, altura);
+    }
+
+    @Override
+    public double calcularImc() {
+        return getPeso() / (getAltura() * getAltura());
+    }
+}
+
+class Atleta extends Pessoa {
+    // Atributo específico da subclasse
+    private double percentualMassaMagra; 
+
+    public Atleta(String nome, double peso, double altura, double percentualMassaMagra) throws DadosInvalidosException {
+        super(nome, peso, altura);
+        this.percentualMassaMagra = percentualMassaMagra;
+    }
+
+    // Polimorfismo: Ajusta o IMC considerando o aviso do enunciado sobre músculos
+    @Override
+    public double calcularImc() {
+        double imcBruto = getPeso() / (getAltura() * getAltura());
+        // Ajuste hipotético: atletas com muita massa magra reduzem o impacto do peso bruto no IMC
+        if (percentualMassaMagra > 80) {
+            return imcBruto * 0.90; 
+        }
+        return imcBruto;
+    }
+}
+
+// ==========================================
+// 4. CLASSE DE SERVIÇO (Regras de Negócio)
+// ==========================================
+class CalculadoraIMC {
+    public static String obterClassificacao(double imc) {
+        if (imc < 18.5) return "Abaixo do peso";
+        if (imc <= 24.9) return "Peso normal";
+        if (imc <= 29.9) return "Sobrepeso";
+        if (imc <= 34.9) return "Obesidade grau I";
+        if (imc <= 39.9) return "Obesidade grau II";
+        return "Obesidade grau III (mórbida)";
+    }
+}
+
+// ==========================================
+// 5. CLASSE PRINCIPAL (Interface e Fluxo)
+// ==========================================
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Pessoa> listaPessoas = new ArrayList<>();
+        
+        System.out.println("=== SISTEMA AVANÇADO DE TRIAGEM (POO) ===");
+        
+        while (true) {
+            try {
+                System.out.print("\nNome (ou 'sair'): ");
+                String nome = scanner.nextLine();
+                if (nome.equalsIgnoreCase("sair")) break;
+
+                System.out.print("Peso em kg (ex: 75.5): ");
+                double peso = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+
+                System.out.print("Altura em metros (ex: 1.75): ");
+                double altura = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+
+                System.out.print("É atleta profissional? (S/N): ");
+                String ehAtleta = scanner.nextLine();
+
+                Pessoa pessoa;
+
+                if (ehAtleta.equalsIgnoreCase("S")) {
+                    System.out.print("Digite o % de massa magra (ex: 85): ");
+                    double massa = Double.parseDouble(scanner.nextLine().replace(',', '.'));
+                    // Polimorfismo em ação (Instanciando Atleta)
+                    pessoa = new Atleta(nome, peso, altura, massa);
+                } else {
+                    // Instanciando PacienteComum
+                    pessoa = new PacienteComum(nome, peso, altura);
+                }
+
+                listaPessoas.add(pessoa);
+                
+                double imc = pessoa.calcularImc();
+                System.out.printf("-> IMC Calculado: %.2f (%s)%n", 
+                        imc, CalculadoraIMC.obterClassificacao(imc));
+
+            } catch (NumberFormatException e) {
+                System.out.println("[ERRO] Digite apenas números válidos.");
+            } catch (DadosInvalidosException e) {
+                System.out.println("[ERRO] " + e.getMessage());
+            }
+        }
+
+        // RELATÓRIO FINAL
+        System.out.println("\n=======================================================");
+        System.out.println("                   RELATÓRIO FINAL                     ");
+        System.out.println("=======================================================");
+        
+        for (Pessoa p : listaPessoas) {
+            double imcFinal = p.calcularImc();
+            String tipo = (p instanceof Atleta) ? "Atleta" : "Comum";
+            
+            System.out.printf("Tipo: %-7s | Nome: %-10s | IMC: %.2f | Status: %s%n", 
+                    tipo, p.getNome(), imcFinal, CalculadoraIMC.obterClassificacao(imcFinal));
+        }
+        
+        System.out.println("\nSistema finalizado.");
+        scanner.close();
+    }
+}
